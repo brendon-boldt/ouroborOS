@@ -1,0 +1,134 @@
+    bits 16
+
+bpbBytesPerSector:  	dw 512
+bpbSectorsPerCluster: 	db 1
+bpbReservedSectors: 	dw 1
+bpbNumberOfFATs: 	    db 2
+bpbRootEntries: 	    dw 224
+bpbTotalSectors: 	    dw 2880
+bpbMedia: 	            db 0xf0
+bpbSectorsPerFAT: 	    dw 9
+bpbSectorsPerTrack: 	dw 18
+bpbHeadsPerCylinder: 	dw 2
+bpbHiddenSectors:       dd 0
+bpbTotalSectorsBig:     dd 0
+bsDriveNumber: 	        db 0
+bsUnused: 	            db 0
+bsExtBootSignature: 	db 0x29
+bsSerialNumber:	        dd 0x160C7E75
+
+Cylinder:   db  0
+Head:       db  0
+Sector:     db  0
+DataSector: dw  0
+FATAddress: dw  0
+
+LBAtoCHS:
+        pusha
+        mov     ax, word [bpbHeadsPerCylinder]
+        mul     word [bpbSectorsPerTrack]
+        mov     bx, ax
+        mov     ax, cx
+        mul     byte [bpbSectorsPerCluster]
+        xor     dx, dx
+        div     bx
+        mov     [Cylinder], al ; Was ax
+        mov     ax, dx
+        xor     dx, dx
+        div     word [bpbSectorsPerTrack]
+        mov     [Head], al ; Was ax
+        add     dx, 1 ; Remember, sectors are 1-based
+        mov     [Sector], dl ; Was dx
+        popa
+        mov     ch, byte [Cylinder]
+        mov     dh, byte [Head]
+        mov     cl, byte [Sector]
+        ret
+
+ClustertoLBA:
+        push    ax
+        mov     ax, cx
+        sub     ax, 0x2
+        ;imul   byte [bpbSectorsPerCluster] ; Remove if SpC neq 1
+        add     ax, word [DataSector]
+        mov     cx, ax
+        pop     ax
+        ret
+
+ReadSectors:
+        push    di
+        mov     di, 5
+    .loop:
+        call    LBAtoCHS
+        mov     ah, 0x0
+        mov     dl, 0x0 ; drive 0
+        int     0x13
+        mov     ah, 0x2 ; int 0x13 function 0x2
+        int     0x13
+        dec     di
+        jz      .done
+        jc      .loop
+    .done:
+        pop     di
+        ret
+
+FindImage:
+        mov     cx, word [bpbRootEntries]
+    .loop:
+        push    cx
+        mov     cx, 11
+        ;mov     si, ImageName
+        push    di
+        push    si
+        repe    cmpsb
+        pop     si
+        pop     di
+        je      .done
+        pop     cx
+        add     di, 0x20
+        loop    .loop
+        hlt
+    .done:
+        pop     cx
+        ret
+
+LoadFile:
+
+        push    di ; Will hold linked list values
+        mov     cx, [di + 0x1a]
+        mov     di, cx
+        call    ClustertoLBA
+        mov     ax, 1
+        call    ReadSectors
+    .loop:
+        mov     ax, di
+        xor     dx, dx
+        mov     cx, 0x3
+        mul     cx
+        mov     cx, 0x2
+        div     cx
+        push    bx
+        add     ax, word [FATAddress]
+        mov     bx, ax
+        mov     cx, [bx]
+        pop     bx
+        test    di, 0x1
+        jnz      .odd
+    .even:
+        and     cx, 0x0fff
+        jmp     .read
+    .odd:
+        shr     cx, 0x4
+    .read:
+        cmp     cx, 0xff0
+        ja      SetGDT
+        mov     di, cx
+        call    ClustertoLBA
+        mov     al, 1
+        add     bx, 0x200
+        call    ReadSectors
+        jmp     .loop
+    .done:
+        ret
+
+

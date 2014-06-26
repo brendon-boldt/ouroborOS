@@ -1,0 +1,9 @@
+romimage:	file="C:\Program Files\Bochs-2.6.2\BIOS-bochs-latest" #, address=0xd0000
+vgaromimage: 	file=$BXSHARE/VGABIOS-lgpl-latest
+
+floppya:	1_44=a:, status=inserted
+
+
+log:            .log
+error:		action=report
+info:		action=report

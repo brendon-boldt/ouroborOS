@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="ouroborOS" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="../Binary/ouroborOS" prefix_auto="1" extension_auto="1" />
+				<Option object_output="../Binary/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+			</Target>
+		</Build>
+		<Unit filename="_null.h" />
+		<Unit filename="bldr.s" />
+		<Unit filename="fat12.si" />
+		<Unit filename="kernel.s" />
+		<Unit filename="okldr.s" />
+		<Unit filename="size_t.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
